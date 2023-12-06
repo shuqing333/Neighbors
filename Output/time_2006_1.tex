@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+\hline\hline
+            &\multicolumn{4}{c}{2006-2008}                                                          &\multicolumn{4}{c}{2006-2011}                                                          \\\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+            &\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 6-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 21-30}&\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 6-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 21-30}\\
+\hline
+minority    &     0.00238         &     0.00468\sym{*}  &    -0.00244         &     0.00167         &     0.00162         &     0.00458         &     0.00186         &     0.00406\sym{*}  \\
+            &   (0.00233)         &   (0.00213)         &   (0.00166)         &   (0.00184)         &   (0.00244)         &   (0.00252)         &   (0.00178)         &   (0.00184)         \\
+[1em]
+minority $\times$ time&    -0.00162         &   -0.000734         &     0.00218         &   -0.000225         &  -0.0000614         &   -0.000244         &  -0.0000520         &   -0.000782         \\
+            &   (0.00175)         &   (0.00169)         &   (0.00128)         &   (0.00138)         &  (0.000827)         &  (0.000854)         &  (0.000615)         &  (0.000629)         \\
+\hline
+\(N\)       &        9164         &        9090         &        9004         &        8792         &       20058         &       19861         &       19632         &       19111         \\
+\hline\hline
+\multicolumn{9}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{9}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

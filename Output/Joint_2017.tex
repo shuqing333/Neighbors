@@ -1,0 +1,27 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{2}{c}}
+\hline\hline
+            &\multicolumn{1}{c}{2017-2020}&\multicolumn{1}{c}{2017-2023}\\
+\hline
+minority    &     0.00328         &     0.00592\sym{*}  \\
+            &   (0.00220)         &   (0.00296)         \\
+[1em]
+Nearest 6-10&     0.00290         &      0.0163         \\
+            &   (0.00963)         &   (0.00912)         \\
+[1em]
+Nearest 11-20&      0.0332\sym{*}  &      0.0406\sym{**} \\
+            &    (0.0135)         &    (0.0137)         \\
+[1em]
+Nearest 21-30&      0.0145         &      0.0307\sym{*}  \\
+            &    (0.0130)         &    (0.0134)         \\
+[1em]
+\_cons      &     0.00106         &    -0.00240         \\
+            &   (0.00158)         &   (0.00208)         \\
+\hline
+\(N\)       &       11883         &       11816         \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{3}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

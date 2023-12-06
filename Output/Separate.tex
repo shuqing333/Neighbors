@@ -1,0 +1,16 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{6}{c}}
+\hline\hline
+            &\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 5-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 5-10}&\multicolumn{1}{c}{Nearest 11-20}\\
+\hline
+minority    &      0.0750\sym{***}&      0.0720\sym{***}&      0.0584\sym{***}&      0.0669\sym{***}&      0.0620\sym{***}&      0.0633\sym{***}\\
+            &   (0.00458)         &   (0.00454)         &   (0.00335)         &   (0.00453)         &   (0.00462)         &   (0.00341)         \\
+\hline
+\(N\)       &       12464         &       12464         &       12464         &       12464         &       12464         &       12464         \\
+year        &        2020         &        2020         &        2020         &        2017         &        2017         &        2017         \\
+\hline\hline
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

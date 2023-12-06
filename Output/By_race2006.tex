@@ -1,0 +1,22 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+\hline\hline
+            &\multicolumn{4}{c}{2006-2013}                                                          \\\cmidrule(lr){2-5}
+            &\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 6-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 21-30}\\
+\hline
+Minority    &     0.00491         &     0.00452         &     0.00373         &     0.00362         \\
+            &   (0.00280)         &   (0.00285)         &   (0.00208)         &   (0.00201)         \\
+[1em]
+Mover dem   &     0.00706\sym{*}  &    -0.00304         &  0.00000324         &   -0.000956         \\
+            &   (0.00353)         &   (0.00367)         &   (0.00254)         &   (0.00246)         \\
+[1em]
+Minority $\times$ mover dem&     -0.0111\sym{*}  &    -0.00392         &    0.000340         &     0.00145         \\
+            &   (0.00493)         &   (0.00508)         &   (0.00362)         &   (0.00352)         \\
+\hline
+\(N\)       &       10013         &        9938         &        9854         &        9623         \\
+\hline\hline
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{6}{c}}
+\hline\hline
+            &\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 5-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 5-10}&\multicolumn{1}{c}{Nearest 11-20}\\
+\hline
+probability\_black&      -0.223\sym{***}&      -0.217\sym{***}&      -0.181\sym{***}&      -0.241\sym{***}&      -0.228\sym{***}&      -0.194\sym{***}\\
+            &   (0.00793)         &   (0.00786)         &   (0.00591)         &   (0.00934)         &   (0.00924)         &   (0.00698)         \\
+[1em]
+Constant    &       0.358\sym{***}&       0.354\sym{***}&       0.351\sym{***}&       0.352\sym{***}&       0.347\sym{***}&       0.347\sym{***}\\
+            &  (0.000999)         &  (0.000990)         &  (0.000745)         &   (0.00118)         &   (0.00117)         &  (0.000882)         \\
+\hline
+\(N\)       &       88224         &       88224         &       88224         &       63181         &       63181         &       63181         \\
+Owner       &                     &                     &                     &           X         &           X         &           X         \\
+\hline\hline
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

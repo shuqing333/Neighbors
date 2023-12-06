@@ -1,0 +1,22 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{3}{c}}
+\hline\hline
+            &\multicolumn{1}{c}{Level}&\multicolumn{1}{c}{FD}&\multicolumn{1}{c}{FE}\\
+\hline
+Nearest 5   &     0.00778\sym{***}&    0.000635         &    0.000580         \\
+            &   (0.00125)         &   (0.00124)         &   (0.00131)         \\
+[1em]
+Nearest 6-10&     0.00796\sym{***}&     0.00139         &     0.00141         \\
+            &   (0.00125)         &   (0.00125)         &   (0.00131)         \\
+[1em]
+Nearest 11-20&     0.00854\sym{***}&     0.00307\sym{***}&     0.00316\sym{***}\\
+            &  (0.000924)         &  (0.000907)         &  (0.000957)         \\
+[1em]
+Nearest 21-30&     0.00564\sym{***}&    0.000508         &  -0.0000115         \\
+            &  (0.000943)         &  (0.000928)         &  (0.000977)         \\
+\hline\hline
+\multicolumn{4}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{4}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}

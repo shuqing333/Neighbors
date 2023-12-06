@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+\hline\hline
+            &\multicolumn{4}{c}{2017-2020}                                                          &\multicolumn{4}{c}{2017-2023}                                                          \\\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+            &\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 6-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 21-30}&\multicolumn{1}{c}{Nearest 5}&\multicolumn{1}{c}{Nearest 6-10}&\multicolumn{1}{c}{Nearest 11-20}&\multicolumn{1}{c}{Nearest 21-30}\\
+\hline
+minority    &    -0.00725         &     -0.0152         &     0.00689         &   -0.000890         &   -0.000687         &      0.0148         &     -0.0631\sym{**} &     0.00866         \\
+            &    (0.0112)         &    (0.0113)         &   (0.00798)         &   (0.00804)         &    (0.0320)         &    (0.0318)         &    (0.0232)         &    (0.0235)         \\
+[1em]
+minority $\times$ time&     0.00565         &     0.00708         &    -0.00128         &     0.00180         &     0.00109         &    -0.00114         &      0.0120\sym{**} &   -0.000234         \\
+            &   (0.00422)         &   (0.00423)         &   (0.00303)         &   (0.00304)         &   (0.00568)         &   (0.00567)         &   (0.00413)         &   (0.00418)         \\
+\hline
+\(N\)       &       12414         &       12299         &       12150         &       11883         &       12413         &       12278         &       12105         &       11816         \\
+\hline\hline
+\multicolumn{9}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{9}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+}
