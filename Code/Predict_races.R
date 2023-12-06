@@ -1,0 +1,7 @@
+setwd("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors")
+#install.packages("predictrace")
+library(predictrace)
+library(haven)
+owner_surname <- read_dta("Datasets/Intermediate/CA_Infutor_clean.dta")
+Predicted_races <- predict_race(owner_surname$lname)
+write.csv(Predicted_races,file="Datasets/Output/Predicted_races.csv",row.names=FALSE)
