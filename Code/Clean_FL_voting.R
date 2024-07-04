@@ -11,6 +11,7 @@ library(geodist)
 library(tidyr)
 library(data.table)
 library(geosphere)
+library("microbenchmark")
 rm(list=ls())
 
 #############################Load some datasets#############################
@@ -85,25 +86,25 @@ FL2013 <- left_join(FL2013,Countycode,by=c("county"="Countycode")) %>%
   filter(resid_addr1!="*")
 
 #############################Combine everything to form a panel#############################
-FL2020<- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_2020_cleaned.csv", nrows = chunk_size, skip = 0, header=TRUE)
-FL2023<- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_2023_cleaned.csv", nrows = chunk_size, skip = 0, header=TRUE)
+FL2020<- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_2020_cleaned.csv",skip = 0, header=TRUE)
+FL2023<- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_2023_cleaned.csv", skip = 0, header=TRUE)
+Voting <- rbind(FL2013,FL2020,FL2023)
 rm(FL2013,FL2020,FL2023)
+
+#############################Merge the FL voting data with the geocoded addresses#############################
+Voting <- left_join(Voting,FL_address_geocoded,by=c("resid_addr1"="USER_resid_addr1","resid_city"="USER_resid_city","resid_zipcode"="USER_resid_zipcode")) %>% 
+  distinct(voterid, year, .keep_all = TRUE)
 #save a copy
 fwrite(Voting, file = "/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_panel_cleaned.csv")
 
-
-#############################Merge the FL voting data with the geocoded addresses#############################
-FL_panel_merge <- left_join(FL_panel,FL_address_geocoded,by=c("resid_addr1"="USER_resid_addr1","resid_city"="USER_resid_city","resid_zipcode"="USER_resid_zipcode")) %>% 
-  distinct(voterid, year, .keep_all = TRUE)
-rm(FL_panel)
-
+rm(FL_address_geocoded)
 
 #############################Find closest neighbors of each property#############################
 #Clean the infutor property data data and select variables
-FL_infutor_clean<- FL_infutor_clean %>% select("id","prop_latitude","prop_longitude","prop_ownerocc","prop_recedate","white","hispanic","asian","black","zip") %>% mutate(date=as.Date(FL_infutor_clean$prop_recedate, origin = "1960-01-01"))
-
+FL_infutor_clean<- FL_infutor_clean %>% select("id","prop_latitude","prop_longitude","prop_ownerocc","prop_recedate","white","hispanic","asian","black","zip") %>% mutate(date=as.Date(FL_infutor_clean$prop_recedate, origin = "1960-01-01")) %>% filter(year(date)>2013,prop_ownerocc=="O")
+Voting <- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_panel_cleaned.csv",skip = 0, header=TRUE)
 #Clean and select variables for the voter panel
-FL_panel_merge <- FL_panel_merge %>%
+Voting <- Voting %>%
   filter(Addr_type=="PointAddress") %>%
   group_by(voterid) %>%
   filter(n() >= 3) %>%
@@ -117,37 +118,48 @@ FL_panel_merge <- FL_panel_merge %>%
   filter(Dem!=0 | Rep!=0 | Ind!=0) %>%
   select(c("voterid","gender","race","Dem","Ind","Rep","X","Y","year"))
 
-#Save the 2013 and 2023 data for analysis
-FL2013 <- FL_panel_merge %>% filter(year==2013) %>% rename(Dem2013=Dem,Rep2013=Rep,Ind2013=Ind,lon2013=X,lat2013=Y) %>% filter(!is.na(lat2013))
-FL2023 <- FL_panel_merge %>% filter(year==2023) %>% rename(Dem2023=Dem,Rep2023=Rep,Ind2023=Ind,lon2023=X,lat2023=Y)
-rm(FL_panel_merge)
+#Save the 2013 and 2020 data for analysis
+Voting <- Voting %>%filter(year!=2023)
+
+#Generate indicator for anyone changed addresses
+Voting <- Voting %>%
+  group_by(voterid) %>%
+  mutate(address_diff = ifelse(n_distinct(paste(X, Y)) > 1, 1, 0)) %>%
+  ungroup()
+
+#Generate adress ID
+Voting <- Voting %>%
+  group_by(X, Y) %>%
+  mutate(address_id = cur_group_id()) %>%
+  ungroup()
+FL2013 <- Voting %>% filter(year==2013) %>% rename(Dem2013=Dem,Rep2013=Rep,Ind2013=Ind,lon2013=X,lat2013=Y) %>% filter(!is.na(lat2013))
+FL2020 <- Voting %>% filter(year==2020) %>% rename(Dem2020=Dem,Rep2020=Rep,Ind2020=Ind,lon2020=X,lat2020=Y) %>% filter(!is.na(lat2020)) %>% select(-c("gender","race","address_id","address_diff"))
 
 #Find the nearest neighbor using KNN
-input <- FL_infutor_clean %>% select("prop_latitude","prop_longitude")
-query <- FL2013 %>% select("lat2013","lon2013") 
+input <- FL2013 %>% select("lat2013","lon2013") 
+query <- FL_infutor_clean %>% select("prop_latitude","prop_longitude")
 knn <-get.knnx(query,input,k=40)
 
 #Find the row indices of the neighbors
 loc <- knn$nn.index
-loc[] <- FL2013$voterid[loc]
+loc[] <- FL_infutor_clean$id[loc]
 colnames(loc) <- paste0("neighbour_",1:ncol(loc))
 
 #Merge back the property id
-array <- FL_infutor_clean %>% 
-  select(id) %>% 
+array <- FL2013 %>% 
+  select(voterid) %>% 
   bind_cols(loc %>% as.data.frame())
 
 #Reshape to long format for easier merging
 array_long <- pivot_longer(array,cols = starts_with("neighbour_"),names_to = "Rank",values_to = "neighbor_id",names_prefix = "neighbour_")
 array_long$Rank <- as.numeric(array_long$Rank)
 
-
 #############################Merge back voter information and property owner information to the neighbor array generate the final sample#############################
 #Merge the voter information back to the neighbor array
-array_long <-left_join(array_long,FL_2013,by=c("neighbor_id"="voterid"))
-array_long <-left_join(array_long,FL_2023,by=c("neighbor_id"="voterid"))
-array_long <- array_long %>% select(-c("gender.x","race.x")) %>% rename(gender=gender.y,race=race.y)
-rm(FL_2013,FL_2023)
+array_long <-left_join(array_long,FL2013,by=c("voterid"="voterid"))
+array_long <-left_join(array_long,FL2020,by=c("voterid"="voterid"))
+array_long <- left_join(array_long,FL_infutor_clean,by=c("neighbor_id"="id"))
+rm(FL2013,FL2020)
 
 #Save a copy
 fwrite(array_long,"/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/array.csv",row.names = FALSE)
@@ -165,7 +177,7 @@ while (nrow(chunk) > 0) {
   colnames(chunk) <- colnames
   
   #Merge back the property owner information
-  chunk <- chunk %>% left_join(FL_infutor_clean,by="id")
+  chunk <- left_join(chunk,FL_infutor_clean,by=c("neighbor_id"="id"))
   
   #Calculate the disatance between property and voters
   chunk <- chunk %>%
@@ -176,33 +188,14 @@ while (nrow(chunk) > 0) {
   #Drop certain properties: 1. Those the closest neighbors are further than 500m. 2. Those that were transacted before 2013 since we only have voter data starting from 2013.
   ids_to_drop <- chunk %>%
     filter((Rank == 1 & distance > 500) | year(date)<=2013) %>%
-    pull(id)
-  chunk <- chunk %>% filter(!(id %in% ids_to_drop))
+    pull(voterid)
+  chunk <- chunk %>% filter(!(voterid %in% ids_to_drop))
   
-  #Generate the partisanship by neighbor radius
-  chunk <-chunk %>%
-    mutate(rank_range = case_when(
-      Rank >= 1 & Rank <= 5 ~ "Nearest5",
-      Rank > 5 & Rank <= 10 ~ "Nearest10",
-      Rank > 10 & Rank <= 20 ~ "Nearest20",
-      Rank > 20 & Rank <= 40 ~ "Nearest40"
-    ))
-  
-  chunk_sum <- chunk %>%
-    group_by(rank_range,id,asian,black,white,hispanic,date,zip) %>%
-    summarize(
-      Dem2013 = mean(Dem2013),
-      Ind2013 = mean(Ind2013),
-      Rep2013 = mean(Rep2013),
-      Dem2023 = mean(Dem2023),
-      Ind2023 = mean(Ind2023),
-      Rep2023 = mean(Rep2023)) %>%
-    ungroup()
-  #Pivot to wide format such that each row is a property
-  chunk_wide <- chunk_sum %>% pivot_wider(names_from = "rank_range",values_from = c("Dem2013","Ind2013","Rep2013","Dem2023","Ind2023","Rep2023"))
-  
-  #Save a copy of each chunk of the dataset
-  fwrite(chunk_wide, file = paste0("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/chunk_", current_chunk, ".csv"))
+  #Save only necessary variables
+  chunk <- chunk %>% select(-c("year.x","year.y","prop_ownerocc","prop_recedate")) %>% select(-c("lat2013","lon2013","lat2020","lon2020","prop_latitude","prop_longitude")) %>% mutate(date=year(date)) %>% rename(year=date)
+
+    #Save a copy of each chunk of the dataset
+  fwrite(chunk, file = paste0("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/chunk_", current_chunk, ".csv"))
   
   # Read the next chunk
 fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/array.csv", nrows = chunk_size, skip = chunk_size * current_chunk) -> chunk
@@ -214,6 +207,7 @@ setwd("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Interm
 chunk_files <- list.files(pattern = "chunk_\\d+\\.csv")
 combined_df <- rbindlist(lapply(chunk_files, fread))
 
+
 #Save the final analysis sample
 write_dta(combined_df,"/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Final/Analysis.dta")
 
@@ -221,7 +215,45 @@ write_dta(combined_df,"/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors
 
 
 
+# Assuming Voter_address and FL_infutor_clean data frames are already defined
 
+results <- list()
 
+# Loop over a subset or all rows of Voter_address
+for (i in 1:min(1000, nrow(Voter_address))) {
+  individual <- Voter_address[i, ]
+  
+  # Calculate distances to all properties
+  execution_time<- microbenchmark(distances <- distHaversine(
+    matrix(c(individual$X, individual$Y), nrow = 1),
+    matrix(c(FL_infutor_clean$prop_longitude, FL_infutor_clean$prop_latitude), ncol = 2)
+  ))
+  print(execution_time)
+  # Find properties within the specified radius
+  nearby_properties <- FL_infutor_clean[distances <= 1000, ]
+  
+  # Add distance and individual ID to the results
+  nearby_properties$distance <- distances[distances <= 1000]
+  nearby_properties$address_id <- individual$address_id
+  
+  results[[i]] <- nearby_properties
+}
 
+# Combine the results into a single data frame
+final_results <- bind_rows(results)
 
+final_results <- final_results %>%
+  group_by(address_id) %>%
+  arrange(address_id, distance) %>%
+  mutate(rank = rank(distance, ties.method = "first")) %>%
+  ungroup()
+# Print the result
+print(final_results)
+
+execution_time<- microbenchmark(distances <- distm(
+  matrix(c(individual$X, individual$Y), nrow = 1),
+  matrix(c(FL_infutor_clean$prop_longitude, FL_infutor_clean$prop_latitude), ncol = 2)
+))
+print(execution_time)
+
+distance_matrix <- distm(individual_coords, property_coords, fun = distHaversine)
