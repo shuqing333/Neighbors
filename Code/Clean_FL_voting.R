@@ -12,6 +12,7 @@ library(tidyr)
 library(data.table)
 library(geosphere)
 library("microbenchmark")
+library(ggplot2)
 rm(list=ls())
 
 #############################Load some datasets#############################
@@ -101,7 +102,6 @@ rm(FL_address_geocoded)
 
 #############################Find closest neighbors of each property#############################
 #Clean the infutor property data data and select variables
-FL_infutor_clean<- FL_infutor_clean %>% select("id","prop_latitude","prop_longitude","prop_ownerocc","prop_recedate","white","hispanic","asian","black","zip") %>% mutate(date=as.Date(FL_infutor_clean$prop_recedate, origin = "1960-01-01")) %>% filter(year(date)>2013,prop_ownerocc=="O")
 Voting <- fread("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_panel_cleaned.csv",skip = 0, header=TRUE)
 #Clean and select variables for the voter panel
 Voting <- Voting %>%
@@ -132,22 +132,29 @@ Voting <- Voting %>%
   group_by(X, Y) %>%
   mutate(address_id = cur_group_id()) %>%
   ungroup()
+
 FL2013 <- Voting %>% filter(year==2013) %>% rename(Dem2013=Dem,Rep2013=Rep,Ind2013=Ind,lon2013=X,lat2013=Y) %>% filter(!is.na(lat2013))
 FL2020 <- Voting %>% filter(year==2020) %>% rename(Dem2020=Dem,Rep2020=Rep,Ind2020=Ind,lon2020=X,lat2020=Y) %>% filter(!is.na(lat2020)) %>% select(-c("gender","race","address_id","address_diff"))
 
+rm(Voting)
+
+FL_infutor_clean <- read_dta("/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/FL_infutor_clean.dta")
+FL_infutor_clean<- FL_infutor_clean %>% select("id","prop_latitude","prop_longitude","prop_ownerocc","prop_recedate","white","hispanic","asian","black","zip") %>% mutate(date=as.Date(FL_infutor_clean$prop_recedate, origin = "1960-01-01")) %>% filter(year(date)>2013,prop_ownerocc=="O") %>% group_by(prop_latitude,prop_longitude) %>% mutate(address_id = cur_group_id()) %>% ungroup()
+
 #Find the nearest neighbor using KNN
-input <- FL2013 %>% select("lat2013","lon2013") 
-query <- FL_infutor_clean %>% select("prop_latitude","prop_longitude")
-knn <-get.knnx(query,input,k=40)
+input <- FL_infutor_clean %>% distinct(address_id,.keep_all = TRUE) %>% select("prop_latitude","prop_longitude")
+query <- FL2013 %>% distinct(address_id,.keep_all = TRUE) %>% select("lat2013","lon2013")
+knn <-get.knnx(query,input,k=200)
 
 #Find the row indices of the neighbors
 loc <- knn$nn.index
-loc[] <- FL_infutor_clean$id[loc]
+loc[] <- FL2013$address_id[loc]
 colnames(loc) <- paste0("neighbour_",1:ncol(loc))
 
 #Merge back the property id
-array <- FL2013 %>% 
-  select(voterid) %>% 
+array <- FL_infutor_clean %>% 
+  distinct(address_id) %>% 
+  select(address_id) %>%
   bind_cols(loc %>% as.data.frame())
 
 #Reshape to long format for easier merging
@@ -156,11 +163,30 @@ array_long$Rank <- as.numeric(array_long$Rank)
 
 #############################Merge back voter information and property owner information to the neighbor array generate the final sample#############################
 #Merge the voter information back to the neighbor array
-array_long <-left_join(array_long,FL2013,by=c("voterid"="voterid"))
-array_long <-left_join(array_long,FL2020,by=c("voterid"="voterid"))
-array_long <- left_join(array_long,FL_infutor_clean,by=c("neighbor_id"="id"))
-rm(FL2013,FL2020)
-
+array_long <-left_join(array_long,FL2013,by=c("neighbor_id"="address_id"))
+#array_long <-left_join(array_long,FL2020,by=c("voterid"="voterid"))
+array_long <- left_join(array_long,FL_infutor_clean,by=c("id"="id"))
+#rm(FL2013,FL2020)
+array_long <- array_long %>%
+  mutate(distance = distHaversine(
+    matrix(c(lon2013, lat2013), ncol = 2),
+    matrix(c(prop_longitude, prop_latitude), ncol = 2)
+  ))
+write_dta(array_long,"/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/array_test.dta")
+Neighbor_descriptive<- array_long %>% 
+  group_by(Rank) %>%
+  summarise(Below100m = sum(distance < 100),
+            Below200m = sum(distance < 200),
+            Below500m = sum(distance < 500),
+            Below1000m = sum(distance < 1000))
+obs<-nrow(FL_infutor_clean)
+Neighbor_descriptive <- Neighbor_descriptive %>%
+  mutate(across(starts_with("Below"),~(1-./obs)*100))
+ggplot(array_long, aes(x = distance)) +
+  geom_histogram(binwidth = 0.5, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of Values", x = "Values", y = "Frequency") +
+  theme_minimal()
+print(count_result$max)
 #Save a copy
 fwrite(array_long,"/Users/shuqingchen/Library/CloudStorage/Box-Box/Neighbors/Datasets/Intermediate/array.csv",row.names = FALSE)
 
